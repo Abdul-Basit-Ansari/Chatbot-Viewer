@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbrix Bot Tester - Dynamic Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <style>
+      .gradient-bg {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+      .hero-pattern {
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      }
+      .feature-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .chatbrix-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+      .config-panel {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1001;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+        min-width: 300px;
+        max-width: 400px;
+      }
+      .config-panel.hidden {
+        display: none;
+      }
+      .toggle-config {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 1002;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+      }
+      .toggle-config:hover {
+        background: #5a67d8;
+        transform: scale(1.05);
+      }
+      .status-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+      .status-connected {
+        background-color: #10b981;
+      }
+      .status-disconnected {
+        background-color: #ef4444;
+      }
+      .status-loading {
+        background-color: #f59e0b;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Configuration Toggle Button -->
+    <button class="toggle-config" onclick="toggleConfigPanel()" title="Bot Configuration">
+      <i class="fas fa-cog"></i>
+    </button>
+
+    <!-- Configuration Panel -->
+    <div id="configPanel" class="config-panel hidden">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Bot Configuration</h3>
+        <button onclick="toggleConfigPanel()" class="text-gray-400 hover:text-gray-600">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">API Key</label>
+          <input
+            type="password"
+            id="apiKey"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Enter your API key"
+            value=""
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Bot ID</label>
+          <input
+            type="text"
+            id="botId"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="Enter your bot ID"
+            value=""
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Environment</label>
+          <select
+            id="environment"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            onchange="updateApiUrl()"
+          >
+            <option value="local">Local Development</option>
+            <option value="production">Production</option>
+            <option value="custom">Custom URL</option>
+          </select>
+        </div>
+
+        <div id="customUrlDiv" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Custom API URL</label>
+          <input
+            type="text"
+            id="customUrl"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="https://your-api-domain.com/api/v1"
+            value=""
+          />
+        </div>
+
+        <div id="customWidgetUrlDiv" class="hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Custom Widget URL</label>
+          <input
+            type="text"
+            id="customWidgetUrl"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            placeholder="https://your-widget-domain.com/widget/chatbrix-widget.js"
+            value=""
+          />
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span class="text-sm text-gray-600" id="statusText">Not Connected</span>
+          </div>
+          <button
+            onclick="testConnection()"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300 text-sm"
+          >
+            Test
+          </button>
+        </div>
+
+        <div class="flex space-x-2">
+          <button
+            onclick="loadBot()"
+            class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition duration-300 text-sm font-medium"
+          >
+            <i class="fas fa-play mr-2"></i>Load Bot
+          </button>
+          <button
+            onclick="clearBot()"
+            class="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition duration-300 text-sm font-medium"
+          >
+            <i class="fas fa-stop mr-2"></i>Clear
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <div class="flex items-center">
+            <div class="flex-shrink-0">
+              <h1 class="text-2xl font-bold text-indigo-600">Chatbrix Bot Tester</h1>
+            </div>
+          </div>
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-4">
+              <a href="#home" class="text-gray-900 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+              <a href="#features" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Features</a>
+              <a href="#instructions" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Instructions</a>
+              <a href="#contact" class="text-gray-500 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Contact</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="gradient-bg hero-pattern">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 bg-blue-600">
+        <div class="text-center">
+          <h1 class="text-4xl md:text-6xl font-bold text-white mb-6">Chatbrix Bot Tester</h1>
+          <p class="text-xl md:text-2xl text-white mb-8 max-w-3xl mx-auto">
+            Test your Chatbrix bots in any environment with our dynamic demo platform.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onclick="toggleConfigPanel()"
+              class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition duration-300"
+            >
+              <i class="fas fa-cog mr-2"></i>Configure Bot
+            </button>
+            <button
+              onclick="scrollToInstructions()"
+              class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition duration-300"
+            >
+              <i class="fas fa-info-circle mr-2"></i>How to Use
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Testing Features</h2>
+          <p class="text-xl text-gray-600 max-w-2xl mx-auto">Everything you need to test your Chatbrix bots effectively</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div class="feature-card bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
+              <i class="fas fa-exchange-alt text-indigo-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Environment Switching</h3>
+            <p class="text-gray-600">Easily switch between local development, production, and custom API endpoints.</p>
+          </div>
+
+          <div class="feature-card bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+              <i class="fas fa-key text-green-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Secure Configuration</h3>
+            <p class="text-gray-600">Safely enter your API keys and bot IDs with secure input fields.</p>
+          </div>
+
+          <div class="feature-card bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+              <i class="fas fa-rocket text-blue-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Quick Presets</h3>
+            <p class="text-gray-600">Pre-configured settings for common bot configurations to get started quickly.</p>
+          </div>
+
+          <div class="feature-card bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+              <i class="fas fa-heartbeat text-purple-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Connection Testing</h3>
+            <p class="text-gray-600">Test your bot connection before loading to ensure everything works correctly.</p>
+          </div>
+
+          <div class="feature-card bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-6">
+              <i class="fas fa-mobile-alt text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Responsive Design</h3>
+            <p class="text-gray-600">Test your bots on different screen sizes with our responsive demo interface.</p>
+          </div>
+
+          <div class="feature-card bg-white p-8 rounded-xl shadow-lg border border-gray-100">
+            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-6">
+              <i class="fas fa-share-alt text-yellow-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Easy Sharing</h3>
+            <p class="text-gray-600">Share your bot configurations with team members using URL parameters.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Instructions Section -->
+    <section id="instructions" class="py-20 bg-gray-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How to Use</h2>
+          <p class="text-xl text-gray-600">Follow these simple steps to test your Chatbrix bot</p>
+        </div>
+
+        <div class="max-w-4xl mx-auto">
+          <div class="space-y-8">
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                </div>
+                <div class="ml-6">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-2">Configure Your Bot</h3>
+                  <p class="text-gray-600 mb-4">Click the configuration button (⚙️) in the top-left corner and enter your bot details:</p>
+                  <ul class="list-disc list-inside text-gray-600 space-y-1">
+                    <li><strong>API Key:</strong> Your Chatbrix API key</li>
+                    <li><strong>Bot ID:</strong> The unique identifier for your bot</li>
+                    <li><strong>Environment:</strong> Choose between Local, Production, or Custom URL</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                </div>
+                <div class="ml-6">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-2">Test Connection</h3>
+                  <p class="text-gray-600 mb-4">Click the "Test" button to verify your configuration is correct and the bot is accessible.</p>
+                  <div class="bg-gray-100 p-4 rounded-lg">
+                    <p class="text-sm text-gray-700"><strong>Status Indicators:</strong></p>
+                    <ul class="text-sm text-gray-600 mt-2 space-y-1">
+                      <li><span class="status-indicator status-disconnected"></span>Not Connected</li>
+                      <li><span class="status-indicator status-loading"></span>Testing Connection</li>
+                      <li><span class="status-indicator status-connected"></span>Connected Successfully</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                </div>
+                <div class="ml-6">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-2">Load Your Bot</h3>
+                  <p class="text-gray-600 mb-4">Once the connection test passes, click "Load Bot" to initialize the chatbot widget.</p>
+                  <div class="bg-green-50 border border-green-200 p-4 rounded-lg">
+                    <p class="text-sm text-green-800">
+                      <strong>Success!</strong> The chatbot widget will appear in the bottom-right corner of the page.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg">
+              <div class="flex items-start">
+                <div class="flex-shrink-0">
+                  <div class="w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">4</div>
+                </div>
+                <div class="ml-6">
+                  <h3 class="text-xl font-semibold text-gray-900 mb-2">Start Testing</h3>
+                  <p class="text-gray-600 mb-4">Click on the chatbot widget to start testing your bot's responses and functionality.</p>
+                  <div class="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                    <p class="text-sm text-blue-800">
+                      <strong>Pro Tip:</strong> Try different types of questions to test various bot capabilities and responses.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Need Help?</h2>
+          <p class="text-xl text-gray-600">Get support for your Chatbrix bot testing</p>
+        </div>
+
+        <div class="max-w-2xl mx-auto">
+          <div class="bg-gray-50 p-8 rounded-xl">
+            <div class="text-center">
+              <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-headset text-indigo-600 text-2xl"></i>
+              </div>
+              <h3 class="text-xl font-semibold text-gray-900 mb-2">Support Resources</h3>
+              <p class="text-gray-600 mb-6">Find help and documentation for Chatbrix bot development</p>
+
+              <div class="space-y-4">
+                <a href="#" class="block w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300">
+                  <i class="fas fa-book mr-2"></i>Documentation
+                </a>
+                <a href="#" class="block w-full bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition duration-300">
+                  <i class="fas fa-envelope mr-2"></i>Contact Support
+                </a>
+                <a href="#" class="block w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition duration-300">
+                  <i class="fas fa-github mr-2"></i>GitHub Repository
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <h3 class="text-xl font-bold mb-4">Chatbrix Bot Tester</h3>
+          <p class="text-gray-400 mb-4">Dynamic bot testing platform for Chatbrix developers</p>
+          <div class="flex justify-center space-x-4">
+            <a href="#" class="text-gray-400 hover:text-white">
+              <i class="fab fa-github text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white">
+              <i class="fab fa-twitter text-xl"></i>
+            </a>
+            <a href="#" class="text-gray-400 hover:text-white">
+              <i class="fab fa-linkedin text-xl"></i>
+            </a>
+          </div>
+        </div>
+        <div class="border-t border-gray-800 mt-8 pt-8 text-center">
+          <p class="text-gray-400">&copy; 2024 Chatbrix Bot Tester. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Chatbrix Widget Container -->
+    <div class="chatbrix-widget" id="widgetContainer">
+      <!-- Widget will be loaded here dynamically -->
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+      // Configuration state
+      let currentConfig = {
+        apiKey: "",
+        botId: "",
+        environment: "local",
+        customUrl: "",
+        customWidgetUrl: "",
+        isConnected: false,
+      };
+
+      // API URL mappings
+      const apiUrls = {
+        local: "http://localhost:8000/api/v1",
+        production: "https://api.chatbrix.com/api/v1",
+        custom: "",
+      };
+
+      // Widget script URL mappings
+      const widgetUrls = {
+        local: "http://localhost:3000/widget/chatbrix-widget.js",
+        production: "https://widget.chatbrix.com/widget/chatbrix-widget.js",
+        custom: "",
+      };
+
+      // Initialize the page
+      document.addEventListener("DOMContentLoaded", function () {
+        loadConfigFromUrl();
+        updateApiUrl();
+      });
+
+      // Toggle configuration panel
+      function toggleConfigPanel() {
+        const panel = document.getElementById("configPanel");
+        panel.classList.toggle("hidden");
+      }
+
+      // Update API URL based on environment selection
+      function updateApiUrl() {
+        const environment = document.getElementById("environment").value;
+        const customUrlDiv = document.getElementById("customUrlDiv");
+        const customWidgetUrlDiv = document.getElementById("customWidgetUrlDiv");
+
+        if (environment === "custom") {
+          customUrlDiv.classList.remove("hidden");
+          customWidgetUrlDiv.classList.remove("hidden");
+        } else {
+          customUrlDiv.classList.add("hidden");
+          customWidgetUrlDiv.classList.add("hidden");
+        }
+      }
+
+      // Test connection
+      async function testConnection() {
+        const apiKey = document.getElementById("apiKey").value.trim();
+        const botId = document.getElementById("botId").value.trim();
+        const environment = document.getElementById("environment").value;
+        const customUrl = document.getElementById("customUrl").value.trim();
+        const customWidgetUrl = document.getElementById("customWidgetUrl").value.trim();
+
+        if (!apiKey || !botId) {
+          alert("Please enter both API Key and Bot ID");
+          return;
+        }
+
+        updateStatus("loading", "Testing connection...");
+
+        try {
+          let apiUrl;
+          if (environment === "custom") {
+            apiUrl = customUrl || "http://localhost:8000/api/v1";
+          } else {
+            apiUrl = apiUrls[environment];
+          }
+
+          console.log("🔄 Testing connection to:", apiUrl);
+          console.log("🔄 Bot ID:", botId);
+
+          // Test the connection by trying to get bot configuration
+          const response = await fetch(`${apiUrl}/bot-configurations/client/${botId}`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (response.ok) {
+            const botConfig = await response.json();
+            updateStatus("connected", `Connected to ${botConfig.bot_name || "Bot"}`);
+            currentConfig = {
+              apiKey,
+              botId,
+              environment,
+              customUrl,
+              customWidgetUrl,
+              isConnected: true,
+              apiUrl,
+            };
+          } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } catch (error) {
+          updateStatus("disconnected", `Connection failed: ${error.message}`);
+          currentConfig.isConnected = false;
+        }
+      }
+
+      // Load bot widget
+      function loadBot() {
+        if (!currentConfig.isConnected) {
+          alert("Please test the connection first");
+          return;
+        }
+
+        // Clear existing widget
+        clearBot();
+
+        // Set up Chatbrix configuration
+        window.ChatbrixConfig = {
+          apiKey: currentConfig.apiKey,
+          botId: currentConfig.botId,
+          apiBaseUrl: currentConfig.apiUrl,
+          theme: "light",
+        };
+
+        // Load the widget script
+        const script = document.createElement("script");
+        
+        // Determine widget script URL based on environment
+        let widgetScriptUrl;
+        if (currentConfig.environment === "custom") {
+          // Check if custom widget URL is provided
+          const customWidgetUrl = document.getElementById("customWidgetUrl").value.trim();
+          if (customWidgetUrl) {
+            widgetScriptUrl = customWidgetUrl;
+          } else {
+            // Fallback: try to construct widget URL from API URL
+            widgetScriptUrl = `${currentConfig.apiUrl.replace("/api/v1", "")}/widget/chatbrix-widget.js`;
+          }
+        } else {
+          widgetScriptUrl = widgetUrls[currentConfig.environment];
+        }
+        
+        script.src = widgetScriptUrl;
+        script.onload = function () {
+          updateStatus("connected", "Bot loaded successfully");
+          console.log("✅ Widget script loaded successfully from:", widgetScriptUrl);
+        };
+        script.onerror = function () {
+          updateStatus("disconnected", `Failed to load widget script from: ${widgetScriptUrl}`);
+          console.error("❌ Failed to load widget script from:", widgetScriptUrl);
+        };
+
+        console.log("🔄 Loading widget script from:", widgetScriptUrl);
+        document.head.appendChild(script);
+      }
+
+      // Clear bot widget
+      function clearBot() {
+        // Remove existing widget script
+        const existingScript = document.querySelector('script[src*="chatbrix-widget.js"]');
+        if (existingScript) {
+          existingScript.remove();
+        }
+
+        // Clear widget container
+        const widgetContainer = document.getElementById("widgetContainer");
+        widgetContainer.innerHTML = "";
+
+        // Clear ChatbrixConfig
+        if (window.ChatbrixConfig) {
+          delete window.ChatbrixConfig;
+        }
+
+        updateStatus("disconnected", "Bot cleared");
+      }
+
+      // Update status indicator
+      function updateStatus(status, message) {
+        const indicator = document.getElementById("statusIndicator");
+        const text = document.getElementById("statusText");
+
+        indicator.className = `status-indicator status-${status}`;
+        text.textContent = message;
+      }
+
+      // Load configuration from URL parameters
+      function loadConfigFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const apiKey = urlParams.get("apiKey");
+        const botId = urlParams.get("botId");
+        const environment = urlParams.get("env") || "local";
+
+        if (apiKey && botId) {
+          document.getElementById("apiKey").value = apiKey;
+          document.getElementById("botId").value = botId;
+          document.getElementById("environment").value = environment;
+          updateApiUrl();
+        }
+      }
+
+      // Scroll to instructions
+      function scrollToInstructions() {
+        document.getElementById("instructions").scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      // Smooth scrolling for navigation links
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute("href"));
+          if (target) {
+            target.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
