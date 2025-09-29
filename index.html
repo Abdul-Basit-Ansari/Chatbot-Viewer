@@ -133,8 +133,8 @@
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             onchange="updateApiUrl()"
           >
-            <option value="local">Local Development</option>
             <option value="production">Production</option>
+            <option value="local">Local Development</option>
             <option value="custom">Custom URL</option>
           </select>
         </div>
@@ -214,9 +214,7 @@
               <i class="fas fa-trash mr-2"></i>Clear Saved
             </button>
           </div>
-          <p class="text-xs text-gray-500 mt-2">
-            Configuration is automatically saved after successful connection test.
-          </p>
+          <p class="text-xs text-gray-500 mt-2">Configuration is automatically saved after successful connection test.</p>
         </div>
       </div>
     </div>
@@ -482,7 +480,7 @@
       let currentConfig = {
         apiKey: "",
         botId: "",
-        environment: "production",
+        environment: "local",
         customUrl: "",
         customWidgetUrl: "",
         isConnected: false,
@@ -577,7 +575,7 @@
               isConnected: true,
               apiUrl,
             };
-            
+
             // Save configuration to localStorage after successful connection
             saveConfigToStorage();
             showConfigStatus("Configuration auto-saved after successful connection!", "success");
@@ -610,7 +608,7 @@
 
         // Load the widget script
         const script = document.createElement("script");
-        
+
         // Determine widget script URL based on environment
         let widgetScriptUrl;
         if (currentConfig.environment === "custom") {
@@ -625,7 +623,7 @@
         } else {
           widgetScriptUrl = widgetUrls[currentConfig.environment];
         }
-        
+
         script.src = widgetScriptUrl;
         script.onload = function () {
           updateStatus("connected", "Bot loaded successfully");
@@ -677,14 +675,14 @@
           environment: document.getElementById("environment").value,
           customUrl: document.getElementById("customUrl").value.trim(),
           customWidgetUrl: document.getElementById("customWidgetUrl").value.trim(),
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
-        
+
         // Only save if we have at least API key and bot ID
         if (config.apiKey && config.botId) {
           localStorage.setItem("chatbrixBotTesterConfig", JSON.stringify(config));
           console.log("💾 Configuration saved to localStorage");
-          
+
           // Show save confirmation
           showConfigStatus("Configuration saved successfully!", "success");
         }
@@ -696,9 +694,9 @@
           const savedConfig = localStorage.getItem("chatbrixBotTesterConfig");
           if (savedConfig) {
             const config = JSON.parse(savedConfig);
-            
+
             // Check if config is not too old (30 days)
-            const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
             if (config.timestamp && config.timestamp > thirtyDaysAgo) {
               // Only load if URL parameters don't override
               const urlParams = new URLSearchParams(window.location.search);
@@ -709,10 +707,10 @@
                 document.getElementById("customUrl").value = config.customUrl || "";
                 document.getElementById("customWidgetUrl").value = config.customWidgetUrl || "";
                 updateApiUrl();
-                
+
                 // Show configuration loaded status
                 showConfigStatus("Configuration loaded from saved settings", "success");
-                
+
                 console.log("📂 Configuration loaded from localStorage");
               }
             } else {
@@ -738,16 +736,16 @@
       function showConfigStatus(message, type = "success") {
         const configStatus = document.getElementById("configStatus");
         if (configStatus) {
-          const icon = type === "success" ? "fa-check-circle text-green-600" : 
-                      type === "info" ? "fa-info-circle text-blue-600" : 
-                      "fa-exclamation-circle text-red-600";
-          const bgClass = type === "success" ? "bg-green-50 border-green-200" : 
-                         type === "info" ? "bg-blue-50 border-blue-200" : 
-                         "bg-red-50 border-red-200";
-          const textClass = type === "success" ? "text-green-800" : 
-                           type === "info" ? "text-blue-800" : 
-                           "text-red-800";
-          
+          const icon =
+            type === "success"
+              ? "fa-check-circle text-green-600"
+              : type === "info"
+              ? "fa-info-circle text-blue-600"
+              : "fa-exclamation-circle text-red-600";
+          const bgClass =
+            type === "success" ? "bg-green-50 border-green-200" : type === "info" ? "bg-blue-50 border-blue-200" : "bg-red-50 border-red-200";
+          const textClass = type === "success" ? "text-green-800" : type === "info" ? "text-blue-800" : "text-red-800";
+
           configStatus.className = `${bgClass} border rounded-md p-2`;
           configStatus.innerHTML = `
             <div class="flex items-center">
@@ -756,7 +754,7 @@
             </div>
           `;
           configStatus.classList.remove("hidden");
-          
+
           // Hide after 3 seconds
           setTimeout(() => {
             configStatus.classList.add("hidden");
