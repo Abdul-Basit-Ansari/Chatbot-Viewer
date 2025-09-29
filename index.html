@@ -174,6 +174,14 @@
           </button>
         </div>
 
+        <!-- Configuration Status -->
+        <div id="configStatus" class="hidden bg-green-50 border border-green-200 rounded-md p-2">
+          <div class="flex items-center">
+            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+            <span class="text-sm text-green-800">Configuration loaded from saved settings</span>
+          </div>
+        </div>
+
         <div class="flex space-x-2">
           <button
             onclick="loadBot()"
@@ -187,6 +195,28 @@
           >
             <i class="fas fa-stop mr-2"></i>Clear
           </button>
+        </div>
+
+        <!-- Saved Configuration Management -->
+        <div class="border-t pt-4">
+          <h4 class="text-sm font-medium text-gray-700 mb-2">Saved Configuration</h4>
+          <div class="flex space-x-2">
+            <button
+              onclick="saveConfigToStorage()"
+              class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 text-sm font-medium"
+            >
+              <i class="fas fa-save mr-2"></i>Save Config
+            </button>
+            <button
+              onclick="clearSavedConfig()"
+              class="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition duration-300 text-sm font-medium"
+            >
+              <i class="fas fa-trash mr-2"></i>Clear Saved
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            Configuration is automatically saved after successful connection test.
+          </p>
         </div>
       </div>
     </div>
@@ -475,6 +505,7 @@
       // Initialize the page
       document.addEventListener("DOMContentLoaded", function () {
         loadConfigFromUrl();
+        loadConfigFromStorage();
         updateApiUrl();
       });
 
@@ -546,6 +577,10 @@
               isConnected: true,
               apiUrl,
             };
+            
+            // Save configuration to localStorage after successful connection
+            saveConfigToStorage();
+            showConfigStatus("Configuration auto-saved after successful connection!", "success");
           } else {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
@@ -634,6 +669,101 @@
         text.textContent = message;
       }
 
+      // Save configuration to localStorage
+      function saveConfigToStorage() {
+        const config = {
+          apiKey: document.getElementById("apiKey").value.trim(),
+          botId: document.getElementById("botId").value.trim(),
+          environment: document.getElementById("environment").value,
+          customUrl: document.getElementById("customUrl").value.trim(),
+          customWidgetUrl: document.getElementById("customWidgetUrl").value.trim(),
+          timestamp: Date.now()
+        };
+        
+        // Only save if we have at least API key and bot ID
+        if (config.apiKey && config.botId) {
+          localStorage.setItem("chatbrixBotTesterConfig", JSON.stringify(config));
+          console.log("💾 Configuration saved to localStorage");
+          
+          // Show save confirmation
+          showConfigStatus("Configuration saved successfully!", "success");
+        }
+      }
+
+      // Load configuration from localStorage
+      function loadConfigFromStorage() {
+        try {
+          const savedConfig = localStorage.getItem("chatbrixBotTesterConfig");
+          if (savedConfig) {
+            const config = JSON.parse(savedConfig);
+            
+            // Check if config is not too old (30 days)
+            const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            if (config.timestamp && config.timestamp > thirtyDaysAgo) {
+              // Only load if URL parameters don't override
+              const urlParams = new URLSearchParams(window.location.search);
+              if (!urlParams.get("apiKey") && !urlParams.get("botId")) {
+                document.getElementById("apiKey").value = config.apiKey || "";
+                document.getElementById("botId").value = config.botId || "";
+                document.getElementById("environment").value = config.environment || "local";
+                document.getElementById("customUrl").value = config.customUrl || "";
+                document.getElementById("customWidgetUrl").value = config.customWidgetUrl || "";
+                updateApiUrl();
+                
+                // Show configuration loaded status
+                showConfigStatus("Configuration loaded from saved settings", "success");
+                
+                console.log("📂 Configuration loaded from localStorage");
+              }
+            } else {
+              // Remove old config
+              localStorage.removeItem("chatbrixBotTesterConfig");
+              console.log("🗑️ Old configuration removed from localStorage");
+            }
+          }
+        } catch (error) {
+          console.error("Error loading config from localStorage:", error);
+          localStorage.removeItem("chatbrixBotTesterConfig");
+        }
+      }
+
+      // Clear saved configuration
+      function clearSavedConfig() {
+        localStorage.removeItem("chatbrixBotTesterConfig");
+        console.log("🗑️ Saved configuration cleared");
+        showConfigStatus("Saved configuration cleared!", "info");
+      }
+
+      // Show configuration status message
+      function showConfigStatus(message, type = "success") {
+        const configStatus = document.getElementById("configStatus");
+        if (configStatus) {
+          const icon = type === "success" ? "fa-check-circle text-green-600" : 
+                      type === "info" ? "fa-info-circle text-blue-600" : 
+                      "fa-exclamation-circle text-red-600";
+          const bgClass = type === "success" ? "bg-green-50 border-green-200" : 
+                         type === "info" ? "bg-blue-50 border-blue-200" : 
+                         "bg-red-50 border-red-200";
+          const textClass = type === "success" ? "text-green-800" : 
+                           type === "info" ? "text-blue-800" : 
+                           "text-red-800";
+          
+          configStatus.className = `${bgClass} border rounded-md p-2`;
+          configStatus.innerHTML = `
+            <div class="flex items-center">
+              <i class="fas ${icon} mr-2"></i>
+              <span class="text-sm ${textClass}">${message}</span>
+            </div>
+          `;
+          configStatus.classList.remove("hidden");
+          
+          // Hide after 3 seconds
+          setTimeout(() => {
+            configStatus.classList.add("hidden");
+          }, 3000);
+        }
+      }
+
       // Load configuration from URL parameters
       function loadConfigFromUrl() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -646,6 +776,7 @@
           document.getElementById("botId").value = botId;
           document.getElementById("environment").value = environment;
           updateApiUrl();
+          console.log("🔗 Configuration loaded from URL parameters");
         }
       }
 
